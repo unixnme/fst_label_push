@@ -16,6 +16,7 @@ void add_to_fst(fst::StdVectorFst *dictionary, std::istream &is) {
         if (str2idx.find(word) != str2idx.end())
             continue;
 
+        word += ' ';
         auto olabel = str2idx.size() + 1;
         str2idx[word] = olabel;
         idx2str.emplace_back(word);
@@ -79,14 +80,22 @@ int main(int argc, const char **argv) {
         add_to_fst(&dictionary, std::cin);
     }
 
+    dictionary.Write("dictionary.fst");
+
+    fst::RmEpsilon(&dictionary);
+    dictionary.Write("dictionary.fst.rmeps");
+
     fst::Determinize(dictionary, &dictionary);
-//    fst::Minimize(&dictionary);
+    dictionary.Write("dictionary.fst.rmeps.det");
+
+    fst::Minimize(&dictionary);
+    dictionary.Write("dictionary.fst.rmeps.det.min");
+
 
     auto result = get_stats(&dictionary);
     for (const auto &item : result) {
         std::cout << item.first << " " << item.second << std::endl;
     }
 
-//    dictionary.Write("dictionary.fst");
     return 0;
 }
