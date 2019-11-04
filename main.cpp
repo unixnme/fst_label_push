@@ -54,6 +54,10 @@ std::unordered_map<std::string, int> get_stats(fst::StdVectorFst *dictionary) {
             const auto arc = arcIterator.Value();
             if (arc.olabel == epsilon)
                 queue.emplace_back(arc.nextstate, depth + 1);
+            else if (arc.ilabel == ' ') {
+                ++invalid;
+                continue;
+            }
             else if (dictionary->Final(arc.nextstate) == fst::TropicalWeight::Zero()) {
                 const std::string &word = idx2str[arc.olabel];
                 label_pushed_words[word] = word.size() - depth - 1;
