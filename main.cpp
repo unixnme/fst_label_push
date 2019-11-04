@@ -1,9 +1,11 @@
 #include <iostream>
-#include "fst/vector-fst.h"
-#include "fst/fstlib.h"
 #include <string>
 #include <unordered_map>
 #include <stdexcept>
+
+#include "fst/vector-fst.h"
+#include "fst/fstlib.h"
+
 
 static const unsigned int epsilon = 0;
 static std::unordered_map<std::string, unsigned int> str2idx;
@@ -40,18 +42,21 @@ std::unordered_map<std::string, int> get_stats(fst::StdVectorFst *dictionary) {
     int invalid = 0;
 
     auto start = dictionary->Start();
-    std::vector<int> queue{start};
+    std::vector<std::pair<int, int>> queue{{start, 0}};
     while (!queue.empty()) {
-        auto src = queue.back();
+        auto src = queue.back().first;
+        auto depth = queue.back().second;
         queue.pop_back();
 
         for (fst::ArcIterator<fst::StdVectorFst> arcIterator{*dictionary, src};
              !arcIterator.Done(); arcIterator.Next()) {
             const auto arc = arcIterator.Value();
             if (arc.olabel == epsilon)
-                queue.emplace_back(arc.nextstate);
-            else if (dictionary->Final(arc.nextstate) == fst::TropicalWeight::Zero())
-                label_pushed_words[idx2str[arc.olabel]] = arc.nextstate;
+                queue.emplace_back(arc.nextstate, depth + 1);
+            else if (dictionary->Final(arc.nextstate) == fst::TropicalWeight::Zero()) {
+                const std::string &word = idx2str[arc.olabel];
+                label_pushed_words[word] = word.size() - depth - 1;
+            }
             else
                 ++invalid;
         }
@@ -78,8 +83,10 @@ int main(int argc, const char **argv) {
 //    fst::Minimize(&dictionary);
 
     auto result = get_stats(&dictionary);
-    std::cout << result.size() << std::endl;
+    for (const auto &item : result) {
+        std::cout << item.first << " " << item.second << std::endl;
+    }
 
-    dictionary.Write("dictionary.fst");
+//    dictionary.Write("dictionary.fst");
     return 0;
 }
